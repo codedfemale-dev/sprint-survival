@@ -4,6 +4,10 @@ A small browser simulator by [Coded Female](https://codedfemale.com). Guide a fi
 
 Plain HTML, CSS and JavaScript. No installation, dependencies or build step. No sign-up, analytics or remote data storage. There is no timer. Progress is held in memory and resets on reload.
 
+## Play online
+
+[Play Sprint Survival](https://codedfemale-dev.github.io/sprint-survival/)
+
 ## Play locally
 
 Keep `index.html`, `style.css`, `engine.js` and `script.js` together. Open `index.html` in your browser.
