@@ -40,8 +40,8 @@ function final() {
   return `<div class="callout"><p class="eyebrow">YOUR DELIVERY STORY</p><h3>${title}</h3><p>You met ${goals} of 3 sprint goals and completed ${state.done.length} tasks. Team wellbeing finished at ${state.wellbeing}/100.</p><p>${state.wellbeing<65?'Start the next conversation with workload, support and recovery.':'Keep checking in with the team, even when the numbers look healthy.'} ${goals<3?'Unmet goals are a reason to inspect the plan and priorities, not blame individuals.':'Now test whether the work actually helps learners book useful sessions.'}</p></div><div class="table-wrap"><table class="log"><caption class="sr-only">Results across the three sprints</caption><thead><tr><th>Sprint</th><th>Goal</th><th>Effort used</th><th>Value</th><th>Wellbeing</th></tr></thead><tbody>${state.history.map(r=>`<tr><td>${r.round+1}</td><td>${r.goal?'Met':'In progress'}</td><td>${r.used}/${r.cap}</td><td>${r.value}</td><td>${r.wellbeing}/100</td></tr>`).join('')}</tbody></table></div><div class="result-grid"><div class="result"><h3>Take it into your next sprint</h3><ul><li>Agree a useful goal before filling the plan.</li><li>When work arrives, discuss what moves out.</li><li>Make support and testing part of the work.</li><li>Use evidence from learners to check your value assumptions.</li></ul></div><div class="result"><h3>Still in the backlog</h3>${left.length?`<ul>${left.map(t=>`<li>${t.title}</li>`).join('')}</ul>`:'<p>All available tasks are complete.</p>'}<p class="muted">A backlog is a set of options. You do not have to finish every idea.</p></div></div><p><strong>Try another approach:</strong> the same surprises appear each time, so you can compare your decisions fairly.</p><div class="actions"><button class="primary" data-action="restart">Play again</button><button data-action="download">Download my reflection</button><a class="button" href="https://codedfemale.com">Explore the blog ↗</a></div>`;
 }
 function render(focus=false) {
-  document.body.classList.toggle('studio-active', state.round === 0);
-  if (state.round === 0 && window.renderStudio) {
+  document.body.classList.toggle('studio-active', true);
+  if (window.renderStudio) {
     window.renderStudio();
     if (focus) { document.querySelector('#game-heading').focus({preventScroll:true}); game.scrollIntoView({behavior:'auto',block:'start'}); }
     return;
@@ -56,7 +56,7 @@ function download() {
     'Approach: '+r.stance+'. Event response: '+G.SPRINTS[r.round].event.options[r.choice].title,
     'Delivered: '+(names(r.finished)||'None'), 'Returned to backlog: '+(names(r.unfinished)||'None'),
     `Goal: ${r.goal?'met':'in progress'}. Effort: ${r.used}/${r.cap}. Estimated value: ${r.value}. Wellbeing: ${r.wellbeing}/100.`,
-    'Learning: '+G.SPRINTS[r.round].event.options[r.choice].lesson,''
+    'Learning: '+G.SPRINTS[r.round].event.options[r.choice].lesson, ...(window.studioReflectionLines?window.studioReflectionLines(r.round):[]),''
   ]),'Reflection prompts:','What changed when new work arrived?','What would I discuss with the team?','How would I check whether the work helped learners?','','Fictional teaching model, not a measure of real team performance.','https://codedfemale.com'];
   const url=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'}));const link=document.createElement('a');link.href=url;link.download='my-sprint-reflection.txt';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
