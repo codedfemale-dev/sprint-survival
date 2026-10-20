@@ -29,9 +29,9 @@ function planning() {
   ].map(([id,title,text])=>`<button data-stance="${id}" aria-pressed="${state.stance===id}"><strong>${title}</strong><small>${text}</small></button>`).join('')}</div>${recovery?`<p class="warning">The team needs recovery time. Starting wellbeing reduces this sprint’s capacity by ${recovery} unit${recovery===1?'':'s'}.</p>`:''}${board()}`;
 }
 function event() {const e=G.SPRINTS[state.round].event; return `${goal()}<div class="event"><p class="eyebrow">PLOT TWIST / ${state.round+1}</p><h3>${e.title}</h3><p>${e.text}</p><div class="choices">${e.options.map((o,i)=>`<button data-choice="${i}"><strong>${o.title}</strong><small>${o.text}</small></button>`).join('')}</div></div><p class="muted">Choose a response. You’ll then have a chance to adjust your plan before delivery.</p>`;}
-function adapting() {const o=G.SPRINTS[state.round].event.options[state.choice];return `${goal()}<div class="callout"><p class="eyebrow">YOU CHOSE / ${o.title}</p><p>${o.lesson}</p><p class="muted">Event effect: ${o.capacity>0?'+':''}${o.capacity} capacity, ${o.wellbeing>0?'+':''}${o.wellbeing} wellbeing. Wellbeing changes are applied after delivery.</p></div>${board()}`;}
+function adapting() {const o=G.eventFor(state).options[state.choice];return `${goal()}<div class="callout"><p class="eyebrow">YOU CHOSE / ${o.title}</p><p>${o.lesson}</p><p class="muted">Event effect: ${o.capacity>0?'+':''}${o.capacity} capacity, ${o.wellbeing>0?'+':''}${o.wellbeing} wellbeing. Wellbeing changes are applied after delivery.</p></div>${board()}`;}
 function review() {
-  const r=state.history[state.history.length-1], o=G.SPRINTS[state.round].event.options[state.choice];
+  const r=state.history[state.history.length-1], o=G.eventFor(state).options[state.choice];
   return `<div class="callout"><p class="eyebrow">${r.goal?'GOAL MET':'GOAL STILL IN PROGRESS'}</p><h3>${G.SPRINTS[state.round].goal}</h3><p>${r.goal?'The essential tasks for this goal are complete.':'Still needed: '+names(G.SPRINTS[state.round].goals.filter(id=>!state.done.includes(id)))+'.'}</p></div><div class="result-grid"><div class="result"><h3>Delivered</h3>${r.finished.length?`<ul>${r.finished.map(id=>`<li>${G.find(id).title}</li>`).join('')}</ul>`:'<p>No tasks delivered this sprint.</p>'}<p class="muted">${r.value} estimated value · ${r.used} effort units used</p></div><div class="result"><h3>Returned to the backlog</h3>${r.unfinished.length?`<ul>${r.unfinished.map(id=>`<li>${G.find(id).title}</li>`).join('')}</ul><p class="muted">These tasks need selecting again. No partial progress carries over.</p>`:'<p>Everything in the final plan was completed.</p>'}<p class="${r.delta>=0?'positive':'warning'}">Wellbeing change: ${r.delta>0?'+':''}${r.delta} points${r.wellbeing===100?' (capped at 100)':''}.</p></div></div><p><strong>The learning:</strong> ${o.lesson} ${r.unfinished.length?'An overfull plan also cost 4 wellbeing points.':''}</p><p class="muted">Retrospective question: what would you keep, change or discuss with the team next time?</p><button class="primary" data-action="next">${state.round===2?'See your final reflection':'Plan sprint '+(state.round+2)}</button>`;
 }
 function final() {
@@ -53,10 +53,10 @@ function render(focus=false) {
 function download() {
   const lines=['Sprint Survival | Coded Female','Mentor Match: three-sprint reflection','',...state.history.flatMap(r=>[
     'Sprint '+(r.round+1)+': '+G.SPRINTS[r.round].goal,
-    'Approach: '+r.stance+'. Event response: '+G.SPRINTS[r.round].event.options[r.choice].title,
+    'Approach: '+r.stance+'. Event response: '+G.eventFor(state,r.round).options[r.choice].title,
     'Delivered: '+(names(r.finished)||'None'), 'Returned to backlog: '+(names(r.unfinished)||'None'),
     `Goal: ${r.goal?'met':'in progress'}. Effort: ${r.used}/${r.cap}. Estimated value: ${r.value}. Wellbeing: ${r.wellbeing}/100.`,
-    'Learning: '+G.SPRINTS[r.round].event.options[r.choice].lesson, ...(window.studioReflectionLines?window.studioReflectionLines(r.round):[]),''
+    'Learning: '+G.eventFor(state,r.round).options[r.choice].lesson, ...(window.studioReflectionLines?window.studioReflectionLines(r.round):[]),''
   ]),'Reflection prompts:','What changed when new work arrived?','What would I discuss with the team?','How would I check whether the work helped learners?','','Fictional teaching model, not a measure of real team performance.','https://codedfemale.com'];
   const url=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'}));const link=document.createElement('a');link.href=url;link.download='my-sprint-reflection.txt';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }

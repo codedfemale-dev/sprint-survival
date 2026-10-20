@@ -34,8 +34,9 @@
   ];
   const find = id => TASKS.find(t => t.id === id);
   const clamp = n => Math.max(0, Math.min(100, n));
-  function createState() { return {round:0, phase:'plan', wellbeing:80, done:[], selected:[], history:[], choice:null, stance:'steady', banner:false}; }
-  function capacity(s) { const recovery = s.wellbeing < 45 ? 3 : s.wellbeing < 65 ? 1 : 0; return Math.max(0, 12 - recovery + (s.stance === 'support' ? -2 : s.stance === 'stretch' ? 2 : 0) + (s.choice === null ? 0 : SPRINTS[s.round].event.options[s.choice].capacity)); }
+  function createState(campaign='classic') { return {campaign:['classic','pressure'].includes(campaign)?campaign:'classic',round:0, phase:'plan', wellbeing:80, done:[], selected:[], history:[], choice:null, stance:'steady', banner:false}; }
+  const eventFor=(s,round=s.round)=>root.SprintScenarios?root.SprintScenarios.get(s,round):SPRINTS[round].event;
+  function capacity(s) { const recovery = s.wellbeing < 45 ? 3 : s.wellbeing < 65 ? 1 : 0; return Math.max(0, 12 - recovery + (s.stance === 'support' ? -2 : s.stance === 'stretch' ? 2 : 0) + (s.choice === null ? 0 : eventFor(s).options[s.choice].capacity)); }
   function effort(s) { return s.selected.reduce((n,id) => n + find(id).effort, 0); }
   function available(s,t) { return !s.done.includes(t.id) && (!t.hidden || s.banner) && t.deps.every(id => s.done.includes(id) || s.selected.includes(id)); }
   function toggle(s,id) {
@@ -47,9 +48,9 @@
     } else { const t=find(id); if(t && available(s,t)) s.selected.push(id); }
   }
   function choose(s,index) {
-    if(s.phase !== 'event' || !SPRINTS[s.round].event.options[index]) return;
-    s.choice=index; s.banner=true;
-    const o=SPRINTS[s.round].event.options[index];
+    if(s.phase !== 'event' || !eventFor(s).options[index]) return;
+    s.choice=index; if((s.campaign||'classic')==='classic')s.banner=true;
+    const o=eventFor(s).options[index];
     if(o.add && !s.done.includes(o.add) && !s.selected.includes(o.add)) s.selected.push(o.add);
     s.phase='adapt';
   }
@@ -59,12 +60,12 @@
     for(const id of planned) { const t=find(id); if(used+t.effort>cap || !t.deps.every(d=>s.done.includes(d)||finished.includes(d))) break; finished.push(id); used+=t.effort; }
     const unfinished=planned.filter(id=>!finished.includes(id));
     const stanceDelta=s.stance==='support'?8:s.stance==='stretch'?-10:2;
-    const option=SPRINTS[s.round].event.options[s.choice];
+    const option=eventFor(s).options[s.choice];
     const delta=stanceDelta+option.wellbeing-(unfinished.length?4:0);
     s.wellbeing=clamp(s.wellbeing+delta); s.done.push(...finished);
     s.history.push({round:s.round,cap,used,planned,finished,unfinished,delta,wellbeing:s.wellbeing,choice:s.choice,stance:s.stance,goal:SPRINTS[s.round].goals.every(id=>s.done.includes(id)),value:finished.reduce((n,id)=>n+find(id).value,0)});
     s.phase='review';
   }
   function next(s) { if(s.phase !== 'review') return; if(s.round===2) s.phase='final'; else {s.round++; s.phase='plan'; s.selected=[]; s.choice=null; s.stance='steady';} }
-  root.SprintGame={TASKS,SPRINTS,find,createState,capacity,effort,available,toggle,choose,deliver,next};
+  root.SprintGame={TASKS,SPRINTS,eventFor,find,createState,capacity,effort,available,toggle,choose,deliver,next};
 })(typeof window !== 'undefined' ? window : globalThis);
