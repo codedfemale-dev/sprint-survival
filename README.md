@@ -65,3 +65,11 @@ Native buttons support keyboard use. Selection states use `aria-pressed`; phase 
 ## Licence
 
 MIT. Contributions and remixes welcome. See `LICENSE`.
+
+## Illustrated first sprint
+
+The opening sprint now takes place in one illustrated team studio. Meet Maya, Jo and Sam, plan a bookable mentoring journey, respond to a partner request and inspect the delivered prototype. The duck teaches dependencies, capacity, scope conversations and the difference between a prototype and a release as those ideas appear. A short debrief explains both answer choices. No personal information is collected.
+
+`studio.js` renders the first chapter using the existing engine and shared controls; `studio.css` supplies responsive layouts and code-native SVG/CSS illustrations. Queue reordering checks prerequisites. Replay resets the first sprint, including reflection feedback. Continuing retains completed work, wellbeing and history in the existing sprint 2 and 3 interfaces. The new illustrated chapter covers sprint 1 only.
+
+Run all rule and studio integration checks with `node --test tests.cjs studio-tests.cjs`. Original rules, effort costs and wellbeing effects are retained. Progress still resets on reload.
