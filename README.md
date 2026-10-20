@@ -10,7 +10,7 @@ Plain HTML, CSS and JavaScript. No installation, dependencies or build step. No 
 
 ## Play locally
 
-Keep `index.html`, `style.css`, `engine.js` and `script.js` together. Open `index.html` in your browser.
+Keep all application HTML, CSS and JavaScript files together, including `scenarios.js`, `save.js`, `studio.js` and `studio.css`. Open `index.html` in your browser.
 
 1. Choose a team approach and add tasks in delivery order.
 2. Lock the plan to reveal a surprise.
@@ -87,3 +87,13 @@ After starting, every game decision saves automatically under the namespaced `co
 Starting fresh asks before replacing saved progress. Cancel keeps the current save. Saves stay on the same browser/device; clearing site data or private browsing can remove them. There is no account, remote storage, cross-device sync or analytics. If browser storage is unavailable, the game remains playable and clearly says that it cannot save.
 
 `save.js` versions and validates saves by rebuilding their history through the engine. Unreadable, incompatible or inconsistent saves fall back to a playable introduction instead of rendering stored content or breaking the game. The browser stores one journey; if several tabs play independently, the last saved action becomes the saved journey.
+
+## Branching stories and original block-built art
+
+Choose a story before starting a new journey. **First steps** retains the original three situations. **Changing pressures** adds seven original situations: AI review work, recovery, conflicting decisions, unfinished foundations, unreliable booking checks, keyboard access and attendance evidence. There are ten situations across the two stories.
+
+Changing pressures selects later situations from earlier responses, delivered work and end-of-sprint wellbeing. A review-after-hours promise brings recovery into sprint 2; an unfinished booking journey brings a foundations discussion; unresolved pressure brings verification into sprint 3. Otherwise, missing keyboard booking prompts an access scenario, while delivered keyboard booking leads to an attendance investigation. Each branch states why it appeared, with worked examples, team dialogue and debrief explanations. Numerical capacity/wellbeing effects also differ by situation.
+
+Branch selection uses only completed earlier sprints. A situation cannot switch midway through its response or review, and identical decisions give a consistent comparison. Saves retain the story; replay rebuilds the appropriate branch from the retained earlier history. Existing version-one and version-two saves without a story field continue in First steps. Downloaded reflections record the actual situations and their causes.
+
+The characters, studio and duck use original vector cuboids and visible construction seams. These are generic block-built illustrations created for this game, without third-party branding, logos or copied toy figures.

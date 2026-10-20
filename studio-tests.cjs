@@ -9,7 +9,7 @@ function setup(storage=new Map(),blocked=false) {
   let downloadText='';
   const document={querySelector:element,createElement:()=>({click(){},remove(){}}),body:{append(){},classList:{toggle(){}}}};
   const context=vm.createContext({document,window:{localStorage:{getItem(key){if(blocked)throw Error('Unavailable');return storage.get(key)??null;},setItem(key,value){if(blocked)throw Error('Unavailable');storage.set(key,value);},removeItem(key){if(blocked)throw Error('Unavailable');storage.delete(key);}}},console,Blob:class {constructor(parts){this.text=parts.join('');}},URL:{createObjectURL(blob){downloadText=blob.text;return 'blob:test';},revokeObjectURL(){}},setTimeout:fn=>fn()});
-  for(const file of ['engine.js','save.js','script.js','studio.js'])vm.runInContext(fs.readFileSync(`${__dirname}/${file}`,'utf8'),context);
+  for(const file of ['engine.js','scenarios.js','save.js','script.js','studio.js'])vm.runInContext(fs.readFileSync(`${__dirname}/${file}`,'utf8'),context);
   function click(dataset){const b={dataset,disabled:false};for(const fn of listeners)fn({target:{closest:()=>b}});}
   return {storage,click,html:()=>element('#game').innerHTML,read:code=>vm.runInContext(code,context),download:()=>downloadText,message:()=>element('#announcement').textContent};
 }
@@ -214,4 +214,58 @@ test('every pace and response combination can resume at the final story',()=>{
     const next=setup(first.storage);next.click({studio:'resume'});
     assert.equal(next.read('state.phase'),'final');assert.equal(next.read('state.history.length'),3);
   }
+});
+
+test('legacy version-one and version-two saves preserve original progress',()=>{
+  const first=setup();first.click({studio:'start'});addGoal(first,0);finishSprint(first);first.click({action:'next'});
+  const key=[...first.storage.keys()][0],old=JSON.parse(first.storage.get(key));
+  delete old.state.campaign;
+  for(const version of [1,2]){
+  old.version=version;const resumed=setup(new Map([[key,JSON.stringify(old)]]));
+  assert.match(resumed.html(),/Resume journey/);resumed.click({studio:'resume'});
+  assert.equal(resumed.read('state.campaign'),'classic');assert.equal(resumed.read('state.wellbeing'),84);
+  assert.equal(resumed.read('state.done.length'),3);
+  }
+});
+test('earlier choices change both later situations and their real numerical consequences',()=>{
+  const play=choice=>{const ui=setup();ui.click({campaign:'pressure'});ui.click({studio:'start'});addGoal(ui,0);finishSprint(ui,String(choice));ui.click({action:'next'});return ui;};
+  const focused=play(0),unfinished=play(1),overtime=play(2);
+  assert.equal(focused.read('G.eventFor(state).id'),'handoff');
+  assert.equal(unfinished.read('G.eventFor(state).id'),'foundations');
+  assert.equal(overtime.read('G.eventFor(state).id'),'recovery');
+  assert.equal(focused.read('state.wellbeing'),85);assert.equal(overtime.read('state.wellbeing'),70);
+  assert.match(overtime.html(),/WHY THIS SITUATION/);assert.match(overtime.html(),/asked Jo to review after hours/);
+  assert.doesNotMatch(overtime.html(),/Partner logo banner/);
+});
+test('all adaptive pace-response paths keep stable scenarios through delivery and resume',()=>{
+  const seen=new Set();
+  for(let route=0;route<729;route++){
+    let ui=setup(),encoded=route;ui.click({campaign:'pressure'});ui.click({studio:'start'});
+    for(let round=0;round<3;round++){
+      const pick=encoded%9;encoded=Math.floor(encoded/9);
+      ui.click({stance:['support','steady','stretch'][Math.floor(pick/3)]});
+      if(route%2===0)addGoal(ui,round);
+      ui.click({action:'lock'});const event=ui.read('G.eventFor(state).id');seen.add(event);
+      ui.click({choice:String(pick%3)});ui.click({action:'deliver'});
+      assert.equal(ui.read('G.eventFor(state).id'),event);
+      ui.click({reflect:'0'});assert.match(ui.html(),/Exactly/);
+      const next=setup(ui.storage);assert.match(next.html(),/Resume journey/);next.click({studio:'resume'});ui=next;
+      assert.equal(ui.read('G.eventFor(state).id'),event);
+      assert.doesNotMatch(ui.html(),/undefined|NaN/);
+      ui.click({action:'next'});
+    }
+    assert.match(ui.html(),/JOURNEY COMPLETE/);
+    ui.click({action:'download'});assert.match(ui.download(),/Changing pressures/);
+    ui.click({studio:'replay',round:'1'});assert.equal(ui.read('state.campaign'),'pressure');
+    assert.equal(ui.read('state.history.length'),1);
+  }
+  assert.deepEqual([...seen].sort(),['attendance','draft','foundations','handoff','keyboard','recovery','verification'].sort());
+});
+
+test('adaptive stories resume in planning, conversation, adaptation and final reflection',()=>{
+  let ui=setup();ui.click({campaign:'pressure'});ui.click({studio:'start'});
+  const reload=()=>{const before=ui.read('JSON.stringify(state)');const next=setup(ui.storage);next.click({studio:'resume'});assert.equal(next.read('JSON.stringify(state)'),before);assert.equal(next.read('state.campaign'),'pressure');ui=next;};
+  for(let round=0;round<3;round++){addGoal(ui,round);reload();ui.click({action:'lock'});reload();ui.click({choice:'0'});reload();ui.click({action:'deliver'});reload();ui.click({reflect:'1'});reload();ui.click({action:'next'});}
+  reload();ui.click({studio:'replay',round:'0'});reload();
+  assert.equal(ui.read('G.eventFor(state).id'),'draft');assert.equal(ui.read('state.history.length'),0);
 });

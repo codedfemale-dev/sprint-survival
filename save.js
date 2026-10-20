@@ -17,12 +17,13 @@
     }
   }
   function validate(data){
-    if(!object(data)||data.version!==1||data.started!==true||!Number.isFinite(data.savedAt)||data.savedAt<=0||!object(data.state)||!object(data.reflections))throw Error('Invalid save');
-    const stored=data.state;
+    if(!object(data)||![1,2].includes(data.version)||data.started!==true||!Number.isFinite(data.savedAt)||data.savedAt<=0||!object(data.state)||!object(data.reflections))throw Error('Invalid save');
+    const stored={...data.state,campaign:data.state.campaign===undefined?'classic':data.state.campaign};
+    if(!['classic','pressure'].includes(stored.campaign))throw Error('Invalid campaign');
     if(!Number.isInteger(stored.round)||stored.round<0||stored.round>2||!['plan','event','adapt','review','final'].includes(stored.phase)||!Array.isArray(stored.history)||stored.history.length>3||!validStance(stored.stance))throw Error('Invalid state');
     const reviewed=['review','final'].includes(stored.phase);
     if(stored.history.length!==stored.round+(reviewed?1:0)||stored.phase==='final'&&stored.round!==2)throw Error('Invalid history');
-    const state=engine.createState(),checkpoints={0:clone(state)};
+    const state=engine.createState(stored.campaign),checkpoints={0:clone(state)};
     for(let i=0;i<stored.history.length;i++){
       const entry=stored.history[i];
       if(!object(entry)||entry.round!==i||!validStance(entry.stance)||!Number.isInteger(entry.choice)||entry.choice<0||entry.choice>2)throw Error('Invalid result');
@@ -61,7 +62,7 @@
   function write(state,reflections){
     try{
       const savedAt=Date.now();
-      root.localStorage.setItem(key,JSON.stringify({version:1,savedAt,started:true,state,reflections}));
+      root.localStorage.setItem(key,JSON.stringify({version:2,savedAt,started:true,state,reflections}));
       return {status:'saved',savedAt};
     }catch{return {status:'unavailable'};}
   }
