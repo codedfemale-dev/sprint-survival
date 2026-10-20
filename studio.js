@@ -3,6 +3,22 @@
 let studioStarted = false;
 let studioReflections = {};
 let studioCheckpoints = {};
+let studioSaveStatus = window.StudioSave.read();
+let studioPendingSave = studioSaveStatus.status==='saved'?studioSaveStatus.game:null;
+let studioNewConfirmation = false;
+if(studioPendingSave)state=JSON.parse(JSON.stringify(studioPendingSave.state));
+function studioSaveBar(){
+  const saved=studioSaveStatus.status==='saved';
+  return `<aside class="save-bar" aria-label="Game progress"><p role="status">${studioSaveStatus.status==='unavailable'?'Saving is unavailable in this browser. Keep this tab open to continue.':studioSaveStatus.status==='invalid'?'The saved game could not be read. You can start a new journey.':saved?'✓ Saved on this browser':'Your journey will save automatically as you play.'}</p>${studioStarted||studioPendingSave?'<button data-studio="ask-new">Start a new journey</button>':''}</aside>`;
+}
+function studioResumePanel(){
+  const s=studioPendingSave.state;
+  const phase={plan:'planning',event:'team conversation',adapt:'adjusting the plan',review:'sprint review',final:'final delivery story'}[s.phase];
+  return `<section class="resume-panel"><p class="eyebrow">WELCOME BACK TO THE STUDIO</p><h2 id="game-heading" tabindex="-1">Your team is right where you left them.</h2><p>Saved: sprint ${s.round+1} · ${phase} · wellbeing ${s.wellbeing}/100.</p><p>Your task order, decisions, delivered work and debrief answers are ready to continue.</p><button class="primary" data-studio="resume">${s.phase==='final'?'Open my delivery story':'Resume journey →'}</button><p class="scope-note">Saved only on this browser and device. Clearing site data or using private browsing can remove progress.</p></section>`;
+}
+function studioConfirmNew(){
+  return `<section class="resume-panel" aria-labelledby="new-heading"><p class="eyebrow">START FRESH?</p><h2 id="new-heading">Replace your saved journey?</h2><p>This resets all three sprints and replaces the saved progress on this browser.</p><div class="studio-actions"><button class="primary" data-studio="confirm-new">Start fresh and replace save</button><button data-studio="cancel-new">Keep my journey</button></div></section>`;
+}
 const portraits = {
   maya: ['#d7bee9','#9b6046','#352936','Maya','Product lead'],
   jo: ['#c4e0d7','#bc7954','#342a32','Jo','Developer'],
@@ -166,19 +182,28 @@ window.studioReflectionLines = round => {
   return ['Team conversation: '+c.examples[state.history[round].choice], 'Debrief: '+c.question, ...(answer===undefined?['Debrief not answered.']:['Your answer: '+c.answers[answer], 'Explanation: '+c.feedback[answer]]), 'Take it to work: '+c.transfer];
 };
 window.renderStudio = function() {
+  if(studioStarted&&!studioPendingSave)studioSaveStatus=window.StudioSave.write(state,studioReflections);
   if(state.phase==='plan'&&!studioCheckpoints[state.round])studioCheckpoints[state.round]=JSON.parse(JSON.stringify(state));
-  const phase=!studioStarted?'intro':state.phase;
-  const finalPhase=phase==='final',last=state.history[state.round];
-  const titles={intro:'Small team. Meaningful choices.',plan:'Make room for what matters.',event:chapter().eventTitle,adapt:'Keep the goal. Adjust the plan.',review:'See what your choices made possible.',final:'Your team. Your delivery story.'};
-  const steps=['Meet','Plan','Respond','Adapt','Review'],index=finalPhase?5:['intro','plan','event','adapt','review'].indexOf(phase);
-  game.innerHTML=`<div class="studio-title"><div><p class="eyebrow">CODED FEMALE · A PLAYABLE DELIVERY STORY</p><h1>Sprint Survival<span> / the team studio</span></h1></div><span class="chapter-tag">${finalPhase?'JOURNEY COMPLETE':`CHAPTER 0${state.round+1} / 03`}</span></div><ol class="campaign-route" aria-label="Journey progress">${CHAPTERS.map((c,i)=>`<li class="${i<=state.round?'reached':''}" ${i===state.round&&!finalPhase?'aria-current="step"':''}><span>${i<state.round||finalPhase?'✓':`0${i+1}`}</span>${c.label}</li>`).join('')}</ol><div class="studio-hud"><div><small>${finalPhase?'THREE SPRINTS COMPLETE':'YOUR MISSION'}</small><strong>${finalPhase?'Inspect, learn and try again':G.SPRINTS[state.round].goal}</strong></div><div><small>${finalPhase?'GOALS MET':phase==='review'?'EFFORT DELIVERED':'EFFORT PLANNED'}</small><strong>${finalPhase?`${state.history.filter(r=>r.goal).length} / 3`:`${phase==='review'?last.used:G.effort(state)} / ${phase==='review'?last.cap:G.capacity(state)}`}</strong></div><div><small>TEAM WELLBEING</small><strong>${state.wellbeing} / 100</strong></div></div>${!finalPhase?`<ol class="studio-progress" aria-label="Sprint ${state.round+1} progress">${steps.map((s,i)=>`<li ${i===index?'aria-current="step"':''} class="${i<=index?'reached':''}"><span>${i<index?'✓':i+1}</span>${s==='Meet'&&state.round>0?'Brief':s}</li>`).join('')}</ol>`:''}${studioScene()}<div class="chapter-content">${heading(titles[phase])}${phase==='intro'?`<div class="intro-grid"><div><p class="eyebrow">WELCOME TO YOUR FIRST SPRINT</p><h3>Help someone take their first step into tech.</h3><p>Mentor Match connects learners with mentors. You’re guiding Maya, Jo and Sam through three short periods of focused work: <strong>sprints</strong>.</p><p>Build a bookable journey, make it easier to trust and use, then learn whether sessions help. Choose work, handle surprises and inspect the result together.</p><button class="primary" data-studio="start">Meet the board →</button><p class="scope-note">No timer. Learn by trying. About 15–20 minutes for the journey.</p></div>${duckNote('I’m your unofficial duck consultant.', 'I’ll explain the tricky bits when they appear. First example: three useful tasks can create one complete journey. More tasks do not automatically mean more help for a learner.')}</div>`:({plan:studioPlanning,event:studioEvent,adapt:studioPlanning,review:studioReview,final:studioFinal}[phase])()}<details class="model-note"><summary>About the learning model</summary><p>Fictional effort and wellbeing numbers help you explore decisions; they do not measure real people. Estimated value is not verified impact. This is a prototype exercise, not a release checklist. Ask the people involved, validate accessibility and privacy, and check outcomes with learners. Progress resets on reload.</p></details></div>`;
+  const phase=studioPendingSave?'resume':!studioStarted?'intro':state.phase;
+  const progressPhase=studioPendingSave?state.phase:phase;
+  const finalPhase=progressPhase==='final',last=state.history[state.round];
+  const titles={resume:'Welcome back.',intro:'Small team. Meaningful choices.',plan:'Make room for what matters.',event:chapter().eventTitle,adapt:'Keep the goal. Adjust the plan.',review:'See what your choices made possible.',final:'Your team. Your delivery story.'};
+  const steps=['Meet','Plan','Respond','Adapt','Review'],index=finalPhase?5:['intro','plan','event','adapt','review'].indexOf(progressPhase);
+  game.innerHTML=`<div class="studio-title"><div><p class="eyebrow">CODED FEMALE · A PLAYABLE DELIVERY STORY</p><h1>Sprint Survival<span> / the team studio</span></h1></div><span class="chapter-tag">${finalPhase?'JOURNEY COMPLETE':`CHAPTER 0${state.round+1} / 03`}</span></div><ol class="campaign-route" aria-label="Journey progress">${CHAPTERS.map((c,i)=>`<li class="${i<=state.round?'reached':''}" ${i===state.round&&!finalPhase?'aria-current="step"':''}><span>${i<state.round||finalPhase?'✓':`0${i+1}`}</span>${c.label}</li>`).join('')}</ol><div class="studio-hud"><div><small>${finalPhase?'THREE SPRINTS COMPLETE':'YOUR MISSION'}</small><strong>${finalPhase?'Inspect, learn and try again':G.SPRINTS[state.round].goal}</strong></div><div><small>${finalPhase?'GOALS MET':progressPhase==='review'?'EFFORT DELIVERED':'EFFORT PLANNED'}</small><strong>${finalPhase?`${state.history.filter(r=>r.goal).length} / 3`:`${progressPhase==='review'?last.used:G.effort(state)} / ${progressPhase==='review'?last.cap:G.capacity(state)}`}</strong></div><div><small>TEAM WELLBEING</small><strong>${state.wellbeing} / 100</strong></div></div>${!finalPhase?`<ol class="studio-progress" aria-label="Sprint ${state.round+1} progress">${steps.map((s,i)=>`<li ${i===index?'aria-current="step"':''} class="${i<=index?'reached':''}"><span>${i<index?'✓':i+1}</span>${s==='Meet'&&state.round>0?'Brief':s}</li>`).join('')}</ol>`:''}${studioScene()}<div class="chapter-content">${studioSaveBar()}${studioNewConfirmation?studioConfirmNew():phase==='resume'?studioResumePanel():`${heading(titles[phase])}${phase==='intro'?`<div class="intro-grid"><div><p class="eyebrow">WELCOME TO YOUR FIRST SPRINT</p><h3>Help someone take their first step into tech.</h3><p>Mentor Match connects learners with mentors. You’re guiding Maya, Jo and Sam through three short periods of focused work: <strong>sprints</strong>.</p><p>Build a bookable journey, make it easier to trust and use, then learn whether sessions help. Choose work, handle surprises and inspect the result together.</p><button class="primary" data-studio="start">Meet the board →</button><p class="scope-note">No timer. Learn by trying. About 15–20 minutes for the journey.</p></div>${duckNote('I’m your unofficial duck consultant.', 'I’ll explain the tricky bits when they appear. First example: three useful tasks can create one complete journey. More tasks do not automatically mean more help for a learner.')}</div>`:({plan:studioPlanning,event:studioEvent,adapt:studioPlanning,review:studioReview,final:studioFinal}[phase])()}` }<details class="model-note"><summary>About the learning model</summary><p>Fictional effort and wellbeing numbers help you explore decisions; they do not measure real people. Estimated value is not verified impact. This is a prototype exercise, not a release checklist. Ask the people involved, validate accessibility and privacy, and check outcomes with learners. Progress saves automatically on this browser and device. Clearing site data or using private browsing can remove it. There is no account or cross-device sync.</p></details></div>`;
 };
 game.addEventListener('click', e=>{
   const b=e.target.closest('button'); if(!b||b.disabled)return;
   if(b.dataset.studio){
-    studioStarted=true;
-    if(b.dataset.studio==='new'){state=G.createState();studioStarted=false;studioReflections={};studioCheckpoints={};}
-    if(b.dataset.studio==='replay'){
+    const action=b.dataset.studio;
+    if(action==='ask-new'||action==='new'){studioNewConfirmation=true;render();game.querySelector('[data-studio="confirm-new"]').focus({preventScroll:true});return;}
+    if(action==='cancel-new'){studioNewConfirmation=false;render();game.querySelector(studioPendingSave?'[data-studio="resume"]':'[data-studio="ask-new"]').focus({preventScroll:true});return;}
+    if(action==='confirm-new'){
+      studioSaveStatus=window.StudioSave.clear();state=G.createState();studioStarted=false;studioReflections={};studioCheckpoints={};studioPendingSave=null;studioNewConfirmation=false;
+    }else if(action==='resume'){
+      if(!studioPendingSave)return;
+      state=studioPendingSave.state;studioReflections=studioPendingSave.reflections;studioCheckpoints=studioPendingSave.checkpoints;studioStarted=true;studioPendingSave=null;
+    }else if(action==='start')studioStarted=true;
+    else if(action==='replay'){
       const round=b.dataset.round===undefined?state.round:Number(b.dataset.round);
       if(!studioCheckpoints[round])return;
       state=JSON.parse(JSON.stringify(studioCheckpoints[round]));
@@ -199,3 +224,8 @@ game.addEventListener('click', e=>{
   }
 });
 render();
+if(studioPendingSave){
+  const resumeHeading=document.querySelector('#game-heading');
+  resumeHeading.focus({preventScroll:true});
+  resumeHeading.scrollIntoView({behavior:'auto',block:'center'});
+}

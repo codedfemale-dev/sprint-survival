@@ -2,7 +2,7 @@
 
 A small browser simulator by [Coded Female](https://codedfemale.com). Guide a fictional mentoring app through three sprints: choose useful work, handle surprises and protect team wellbeing.
 
-Plain HTML, CSS and JavaScript. No installation, dependencies or build step. No sign-up, analytics or remote data storage. There is no timer. Progress is held in memory and resets on reload.
+Plain HTML, CSS and JavaScript. No installation, dependencies or build step. No sign-up, analytics or remote data storage. There is no timer. Progress saves automatically in this browser using localStorage; return to resume the same journey.
 
 ## Play online
 
@@ -53,8 +53,10 @@ Suggested repository description: “A playful delivery simulator about prioriti
 | `index.html` | Introduction, instructions and page structure |
 | `style.css` | Coded Female colours, layout and responsive styles |
 | `engine.js` | Task data, events and simulation rules |
-| `script.js` | Interface, controls and reflection download |
+| `script.js` | Shared controls and reflection download |
 | `tests.cjs` | Rule checks with Node’s built-in test runner |
+| `save.js` | Validated browser-local save and resume |
+| `studio-tests.cjs` | Studio, replay and persistence checks |
 
 Run optional rule checks with `node --test tests.cjs`. The checks are development tools; players do not need Node.
 
@@ -74,6 +76,14 @@ The duck introduces worked examples at the moment a decision matters. Character 
 
 `studio.js` renders the journey using the original engine and shared controls; `studio.css` supplies responsive layouts and code-native SVG/CSS illustrations. Mission cards include unfinished prerequisite work from earlier sprints. Queue reordering protects prerequisites. Pace labels include any recovery reduction from starting wellbeing. The original capacity, dependency and wellbeing rules are retained.
 
-Replay a sprint from its review, or revisit any sprint from the final story. This restores that sprint’s starting state while retaining earlier results; later results and debrief answers are cleared. Start a new journey to return to the introduction and reset everything. Progress still resets on reload; no personal information is collected.
+Replay a sprint from its review, or revisit any sprint from the final story. This restores that sprint’s starting state while retaining earlier results; later results and debrief answers are cleared. Start a new journey to return to the introduction and reset everything. Progress saves on this browser; no personal information is collected.
 
 Run all rule and studio integration checks with `node --test tests.cjs studio-tests.cjs`.
+
+## Save and resume
+
+After starting, every game decision saves automatically under the namespaced `codedfemale:sprint-survival:studio:v1` localStorage key. Refreshing or returning shows a resume screen with the saved sprint and phase. The save includes the plan order, pace, response, delivered work, wellbeing, history and debrief answers. Replay checkpoints are rebuilt from history when resuming, so revisiting earlier sprints still works. Completed journeys can also be reopened.
+
+Starting fresh asks before replacing saved progress. Cancel keeps the current save. Saves stay on the same browser/device; clearing site data or private browsing can remove them. There is no account, remote storage, cross-device sync or analytics. If browser storage is unavailable, the game remains playable and clearly says that it cannot save.
+
+`save.js` versions and validates saves by rebuilding their history through the engine. Unreadable, incompatible or inconsistent saves fall back to a playable introduction instead of rendering stored content or breaking the game. The browser stores one journey; if several tabs play independently, the last saved action becomes the saved journey.
