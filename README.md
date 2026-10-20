@@ -66,10 +66,14 @@ Native buttons support keyboard use. Selection states use `aria-pressed`; phase 
 
 MIT. Contributions and remixes welcome. See `LICENSE`.
 
-## Illustrated first sprint
+## Illustrated team studio
 
-The opening sprint now takes place in one illustrated team studio. Meet Maya, Jo and Sam, plan a bookable mentoring journey, respond to a partner request and inspect the delivered prototype. The duck teaches dependencies, capacity, scope conversations and the difference between a prototype and a release as those ideas appear. A short debrief explains both answer choices. No personal information is collected.
+All three sprints and the final reflection share one illustrated studio with Maya, Jo, Sam and a duck guide. Sprint 1 explores priorities and scope; sprint 2 explores blockers, support and an inclusive booking journey; sprint 3 explores tested demonstrations, feedback and outcome evidence.
 
-`studio.js` renders the first chapter using the existing engine and shared controls; `studio.css` supplies responsive layouts and code-native SVG/CSS illustrations. Queue reordering checks prerequisites. Replay resets the first sprint, including reflection feedback. Continuing retains completed work, wellbeing and history in the existing sprint 2 and 3 interfaces. The new illustrated chapter covers sprint 1 only.
+The duck introduces worked examples at the moment a decision matters. Character dialogue models team conversations. Each sprint has a short debrief with explanations for both answers. The cumulative product preview shows only delivered features, with example feedback questions clearly distinguished from real user evidence. The final story and downloadable reflection include each sprint’s response, lessons and answered debriefs.
 
-Run all rule and studio integration checks with `node --test tests.cjs studio-tests.cjs`. Original rules, effort costs and wellbeing effects are retained. Progress still resets on reload.
+`studio.js` renders the journey using the original engine and shared controls; `studio.css` supplies responsive layouts and code-native SVG/CSS illustrations. Mission cards include unfinished prerequisite work from earlier sprints. Queue reordering protects prerequisites. Pace labels include any recovery reduction from starting wellbeing. The original capacity, dependency and wellbeing rules are retained.
+
+Replay a sprint from its review, or revisit any sprint from the final story. This restores that sprint’s starting state while retaining earlier results; later results and debrief answers are cleared. Start a new journey to return to the introduction and reset everything. Progress still resets on reload; no personal information is collected.
+
+Run all rule and studio integration checks with `node --test tests.cjs studio-tests.cjs`.
